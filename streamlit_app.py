@@ -104,13 +104,14 @@ if st.button("Submit") and question:
     
     with st.spinner("Thinking..."):
         sql = generate_sql(question)
-        df = run_query(sql)
+        df = run_query(sql) 
 
         st.session_state.history.append({
             "question": question,
             "sql": sql,
             "result": df
-        })
+        }) 
+
 
 # -----------------------
 # Display Chat History
