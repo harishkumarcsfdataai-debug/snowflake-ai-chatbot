@@ -43,6 +43,8 @@ Columns:
 - cs_order_number
 - cs_quantity
 - cs_sales_price
+- cs_item_sk
+- cs_list_price
 """
 
 # -----------------------
@@ -126,6 +128,15 @@ for chat in reversed(st.session_state.history):
     st.dataframe(chat["result"])
 
     #--Add AI Explanation (very important)
+
+     # ADD HERE
+    st.markdown("**Explanation:**")
+    st.write(chat["explanation"])
+
+    #  Chart comes LAST
+    if not chat["result"].empty:
+        st.markdown("**Chart:**")
+        st.bar_chart(chat["result"])
 
 def explain_result(question, df):
     prompt = f"""
