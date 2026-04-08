@@ -111,7 +111,7 @@ if st.button("Submit") and question:
         st.session_state.history.append({
             "question": question,
             "sql": sql,
-            "result": df
+            "result": df,
             "explanation": explanation
         }) 
 
