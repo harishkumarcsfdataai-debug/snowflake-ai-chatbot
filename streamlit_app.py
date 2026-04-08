@@ -112,6 +112,7 @@ if st.button("Submit") and question:
             "question": question,
             "sql": sql,
             "result": df
+            "explanation": explanation
         }) 
 
 
