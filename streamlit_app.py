@@ -1,9 +1,8 @@
 import streamlit as st
-import os
 import snowflake.connector
 from dotenv import load_dotenv
-#from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
+import pandas as pd
 
 load_dotenv()
 
@@ -21,21 +20,15 @@ def get_connection():
     )
 
 # -----------------------
-# LLM (Ollama)
-# -----------------------
-#llm = ChatOllama(model="llama3")
-
-# -----------------------
 # LLM (Groq)
 # -----------------------
-
 llm = ChatGroq(
     model="llama-3.1-8b-instant",
     api_key=st.secrets["GROQ_API_KEY"]
 )
 
 # -----------------------
-# Schema (EDIT THIS)
+# Schema
 # -----------------------
 SCHEMA = """
 Table: catalog_sales
@@ -82,13 +75,36 @@ def generate_sql(question):
 def run_query(query):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     try:
         cursor.execute(query)
         return cursor.fetch_pandas_all()
     finally:
         cursor.close()
         conn.close()
+
+# -----------------------
+# Explain Result ✅ FIXED POSITION
+# -----------------------
+def explain_result(question, df):
+    if df.empty:
+        return "No data found for this query."
+
+    prompt = f"""
+    You are a data analyst.
+
+    User question:
+    {question}
+
+    Data result:
+    {df.head(10).to_string()}
+
+    Explain the result in simple English.
+    Highlight key insights briefly.
+    """
+
+    response = llm.invoke(prompt)
+    return response.content.strip()
 
 # -----------------------
 # Streamlit UI
@@ -103,55 +119,45 @@ if "history" not in st.session_state:
 question = st.text_input("Ask your question:")
 
 if st.button("Submit") and question:
-    
     with st.spinner("Thinking..."):
-        sql = generate_sql(question)
-        df = run_query(sql) 
-        explanation = explain_result(question, df)
+        try:
+            sql = generate_sql(question)
+            df = run_query(sql)
+            explanation = explain_result(question, df)
 
-        st.session_state.history.append({
-            "question": question,
-            "sql": sql,
-            "result": df,
-            "explanation": explanation
-        }) 
+            st.session_state.history.append({
+                "question": question,
+                "sql": sql,
+                "result": df,
+                "explanation": explanation
+            })
 
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
 # -----------------------
 # Display Chat History
 # -----------------------
 for chat in reversed(st.session_state.history):
     st.markdown(f"### 🧑‍💼 You: {chat['question']}")
-    
+
     st.markdown("**Generated SQL:**")
     st.code(chat["sql"], language="sql")
-    
+
     st.markdown("**Result:**")
     st.dataframe(chat["result"])
 
-    #--Add AI Explanation (very important)
+    # ✅ Explanation
+    if "explanation" in chat:
+        st.markdown("**Explanation:**")
+        st.write(chat["explanation"])
 
-     # ADD HERE
-    st.markdown("**Explanation:**")
-    st.write(chat["explanation"])
-
-    #  Chart comes LAST
+    # ✅ Smart Chart (NULL-safe)
     if not chat["result"].empty:
-        st.markdown("**Chart:**")
-        st.bar_chart(chat["result"])
+        df = chat["result"].dropna()
 
-def explain_result(question, df):
-    prompt = f"""
-    You are a data analyst.
+        numeric_cols = df.select_dtypes(include=['number']).columns
 
-    User question:
-    {question}
-
-    Data result:
-    {df.head(10).to_string()}
-
-    Explain the result in simple English.
-    """
-
-    response = llm.invoke(prompt)
-    return response.content.strip()
+        if len(numeric_cols) > 0 and not df.empty:
+            st.markdown("**Chart:**")
+            st.bar_chart(df[numeric_cols])
