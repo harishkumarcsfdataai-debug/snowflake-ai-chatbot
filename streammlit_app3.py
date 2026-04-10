@@ -198,3 +198,11 @@ for chat in reversed(st.session_state.history):
         if len(numeric_cols) > 0 and not df.empty:
             st.markdown("**Chart:**")
             st.bar_chart(df[numeric_cols])
+
+
+st.download_button(
+    "⬇️ Download CSV",
+    chat["result"].to_csv(index=False),
+    file_name="data.csv",
+    mime="text/csv"
+)
