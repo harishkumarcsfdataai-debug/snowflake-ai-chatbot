@@ -184,6 +184,21 @@ for chat in reversed(st.session_state.history):
     st.markdown("**Result:**")
     st.dataframe(chat["result"])
 
+    #----
+    st.markdown("**Result:**")
+st.dataframe(chat["result"])
+
+# ✅ ADD HERE
+if not chat["result"].empty:
+    csv = chat["result"].to_csv(index=False)
+
+    st.download_button(
+        label="⬇️ Download CSV",
+        data=csv,
+        file_name="data.csv",
+        mime="text/csv"
+    )
+
     # ✅ Explanation
     if "explanation" in chat:
         st.markdown("**Explanation:**")
@@ -200,9 +215,3 @@ for chat in reversed(st.session_state.history):
             st.bar_chart(df[numeric_cols])
 
 
-st.download_button(
-    "⬇️ Download CSV",
-    chat["result"].to_csv(index=False),
-    file_name="data.csv",
-    mime="text/csv"
-)
