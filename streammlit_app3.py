@@ -195,7 +195,8 @@ for chat in reversed(st.session_state.history):
         st.download_button(
             label="⬇️ Download CSV",
             data=csv,
-            file_name="data.csv",
+            file_name=f"{chat['dataset']}_data.csv",
+            #file_name="data.csv",
             mime="text/csv"
         )
 
