@@ -186,18 +186,18 @@ for chat in reversed(st.session_state.history):
 
     #----
     st.markdown("**Result:**")
-st.dataframe(chat["result"])
+    st.dataframe(chat["result"])
 
-# ✅ ADD HERE
-if not chat["result"].empty:
-    csv = chat["result"].to_csv(index=False)
+    # ✅ ADD HERE
+    if not chat["result"].empty:
+        csv = chat["result"].to_csv(index=False)
 
-    st.download_button(
-        label="⬇️ Download CSV",
-        data=csv,
-        file_name="data.csv",
-        mime="text/csv"
-    )
+        st.download_button(
+            label="⬇️ Download CSV",
+            data=csv,
+            file_name="data.csv",
+            mime="text/csv"
+        )
 
     # ✅ Explanation
     if "explanation" in chat:
