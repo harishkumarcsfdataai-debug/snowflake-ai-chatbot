@@ -39,7 +39,6 @@ Columns:
 - cs_item_sk
 - cs_list_price
 """
-
 # -----------------------
 # Generate SQL
 # -----------------------
