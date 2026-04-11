@@ -200,14 +200,10 @@ question = st.chat_input("Ask your question...")
 if question:
     with st.spinner("Thinking..."):
         try:
-            # ✅ RAG selection
             schema_text, table_name, dataset = get_relevant_schema(question)
 
             sql = generate_sql(question, schema_text, table_name)
-
-            # ✅ Auto fix execution
             df, sql = run_query_with_fix(question, sql)
-
             explanation = explain_result(question, df)
 
             st.session_state.history.append({
@@ -227,9 +223,9 @@ if question:
             st.error(f"Error: {str(e)}")
 
 # -----------------------
-# Chat Display
+# Chat Display (FIXED)
 # -----------------------
-for chat in st.session_state.history:
+for i, chat in enumerate(st.session_state.history):
 
     if chat["role"] == "user":
         with st.chat_message("user"):
@@ -245,13 +241,14 @@ for chat in st.session_state.history:
 
             st.dataframe(chat["result"])
 
+            # ✅ FIXED DOWNLOAD BUTTON
             if not chat["result"].empty:
                 csv = chat["result"].to_csv(index=False)
-                #st.download_button("⬇️ Download CSV", csv)
+
                 st.download_button(
                     "⬇️ Download CSV",
                     data=csv,
-                    file_name=f"{chat['dataset']}.csv",
+                    file_name=f"{chat['dataset']}_{i}.csv",
                     mime="text/csv",
                     key=f"download_{i}"
                 )
@@ -259,10 +256,13 @@ for chat in st.session_state.history:
             st.markdown("**Explanation:**")
             st.write(chat["explanation"])
 
+            # ✅ Chart
             if not chat["result"].empty:
-                df = chat["result"].dropna()
-                numeric_cols = df.select_dtypes(include=['number']).columns
+                df_clean = chat["result"].dropna()
+                numeric_cols = df_clean.select_dtypes(include=['number']).columns
 
                 if len(numeric_cols) > 0:
-                    st.bar_chart(df[numeric_cols])
-                    
+                    st.bar_chart(df_clean[numeric_cols])
+
+
+
