@@ -247,7 +247,14 @@ for chat in st.session_state.history:
 
             if not chat["result"].empty:
                 csv = chat["result"].to_csv(index=False)
-                st.download_button("⬇️ Download CSV", csv)
+                #st.download_button("⬇️ Download CSV", csv)
+                st.download_button(
+                    "⬇️ Download CSV",
+                    data=csv,
+                    file_name=f"{chat['dataset']}.csv",
+                    mime="text/csv",
+                    key=f"download_{i}"
+                )
 
             st.markdown("**Explanation:**")
             st.write(chat["explanation"])
@@ -258,3 +265,4 @@ for chat in st.session_state.history:
 
                 if len(numeric_cols) > 0:
                     st.bar_chart(df[numeric_cols])
+                    
