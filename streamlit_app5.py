@@ -265,3 +265,4 @@ for chat in st.session_state.history:
 
                 if len(numeric_cols) > 0:
                     st.bar_chart(df[numeric_cols])
+                    
