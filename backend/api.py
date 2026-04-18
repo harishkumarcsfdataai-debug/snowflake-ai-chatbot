@@ -21,7 +21,7 @@ SNOWFLAKE_CONFIG = {
 
 llm = ChatGroq(
     model="llama-3.1-8b-instant",
-    api_key="YOUR_GROQ_API_KEY"
+    api_key=os.getenv("GROQ_API_KEY")
 )
 
 # -----------------------
