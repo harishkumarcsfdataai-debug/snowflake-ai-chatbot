@@ -6,17 +6,14 @@ import os
 from langchain_groq import ChatGroq
 
 # -----------------------
-# Load environment
+# Load env
 # -----------------------
 load_dotenv()
 
-# -----------------------
-# Initialize FastAPI
-# -----------------------
 app = FastAPI()
 
 # -----------------------
-# Initialize LLM (Groq)
+# LLM
 # -----------------------
 llm = ChatGroq(
     api_key=os.getenv("GROQ_API_KEY"),
@@ -24,27 +21,18 @@ llm = ChatGroq(
 )
 
 # -----------------------
-# Request schema
+# Request Model (IMPORTANT)
 # -----------------------
 class QueryRequest(BaseModel):
     question: str
 
 # -----------------------
-# API Endpoint
+# API
 # -----------------------
 @app.post("/query")
 def query_api(req: QueryRequest):
-    try:
-        user_question = req.question
+    response = llm.invoke(req.question)
 
-        # Call LLM
-        response = llm.invoke(user_question)
-
-        return {
-            "answer": response.content
-        }
-
-    except Exception as e:
-        return {
-            "error": str(e)
-        }
+    return {
+        "answer": response.content
+    }
