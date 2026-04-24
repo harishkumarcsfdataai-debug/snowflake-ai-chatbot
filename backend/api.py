@@ -5,7 +5,7 @@ import os
 
 from langchain_groq import ChatGroq
 
-print("🔥 THIS API FILE IS RUNNING")
+print("🔥 CORRECT FILE LOADED")
 # -----------------------
 # Load env
 # -----------------------
