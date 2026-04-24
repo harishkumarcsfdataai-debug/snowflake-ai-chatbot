@@ -1,113 +1,50 @@
 from fastapi import FastAPI
-import snowflake.connector
-from langchain_groq import ChatGroq
-import pandas as pd
+from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 
+from langchain_groq import ChatGroq
+
+# -----------------------
+# Load environment
+# -----------------------
 load_dotenv()
 
-
+# -----------------------
+# Initialize FastAPI
+# -----------------------
 app = FastAPI()
 
 # -----------------------
-# CONFIG (use env vars in real)
+# Initialize LLM (Groq)
 # -----------------------
-
-SNOWFLAKE_CONFIG = {
-    "user": os.getenv("SNOWFLAKE_USER"),
-    "password": os.getenv("SNOWFLAKE_PASSWORD"),
-    "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-    "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE"),
-    "database": os.getenv("SNOWFLAKE_DATABASE"),
-    "schema": os.getenv("SNOWFLAKE_SCHEMA")
-}
-
 llm = ChatGroq(
-    model="llama-3.1-8b-instant",
-    api_key=os.getenv("GROQ_API_KEY")
+    api_key=os.getenv("GROQ_API_KEY"),
+    model="llama3-70b-8192"
 )
 
 # -----------------------
-# DB Connection
+# Request schema
 # -----------------------
-def get_connection():
-    return snowflake.connector.connect(**SNOWFLAKE_CONFIG)
-
-# -----------------------
-# SQL Validation
-# -----------------------
-def validate_sql(sql):
-    sql_lower = sql.lower()
-
-    if not sql_lower.startswith("select"):
-        raise ValueError("Only SELECT allowed")
-
-    if any(x in sql_lower for x in ["drop", "delete", "update", "insert"]):
-        raise ValueError("Unsafe SQL detected")
-
-    if "limit" not in sql_lower:
-        sql += " LIMIT 50"
-
-    return sql
-
-# -----------------------
-# Generate SQL
-# -----------------------
-def generate_sql(question):
-    prompt = f"""
-    Convert to Snowflake SQL.
-    Only SELECT queries. No explanation.
-
-    Question: {question}
-    """
-
-    response = llm.invoke(prompt)
-    sql = response.content.strip().replace("```", "")
-    return validate_sql(sql)
-
-# -----------------------
-# Run Query
-# -----------------------
-def run_query(sql):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(sql)
-    df = cursor.fetch_pandas_all()
-    cursor.close()
-    conn.close()
-    return df
-
-# -----------------------
-# Explain
-# -----------------------
-def explain(question, df):
-    if df.empty:
-        return "No data found"
-
-    prompt = f"""
-    Explain this result:
-
-    Question: {question}
-    Data:
-    {df.head(10).to_string()}
-    """
-
-    return llm.invoke(prompt).content.strip()
+class QueryRequest(BaseModel):
+    question: str
 
 # -----------------------
 # API Endpoint
 # -----------------------
 @app.post("/query")
-def query_api(payload: dict):
-    question = payload.get("question")
+def query_api(req: QueryRequest):
+    try:
+        user_question = req.question
 
-    sql = generate_sql(question)
-    df = run_query(sql)
-    explanation = explain(question, df)
+        # Call LLM
+        response = llm.invoke(user_question)
 
-    return {
-        "sql": sql,
-        "data": df.to_dict(),
-        "explanation": explanation
-    }
+        return {
+            "answer": response.content
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
